@@ -80,7 +80,7 @@ router.get("/district/:id", (ctx,next) =>{
 
 let running = 0;
 (async () => {
-  landState = await initializeLandState("../db")
+  landState = await initializeLandState("./db")
 
 
   setInterval(async ()=>{

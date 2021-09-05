@@ -4,6 +4,9 @@ import * as interfaces from "../interfaces";
 
 import level from 'level-ts';
 
+import * as dotenv from "dotenv";
+dotenv.config({path:".env"})
+
 
 const ALCHEMY_MAX=1950;
 
@@ -29,7 +32,7 @@ export class LandState {
 
   constructor(datadir:string){
     this.data_dir = datadir;
-    this.rpc_url = process.env.RPC_URL;
+    this.rpc_url = process.env.RPC_URL as string;
     this.provider = new ethers.providers.JsonRpcProvider(this.rpc_url,137);
     this.district = new ethers.Contract("0x83537906b8501C2843bDe7636E7f0dF0d1daB5eD",abis.district,this.provider);
 
@@ -47,7 +50,7 @@ export class LandState {
 
   __init = (datadir:string) => {
     this.data_dir = datadir;
-    this.rpc_url = process.env.RPC_URL;
+    this.rpc_url = process.env.RPC_URL as string;
     this.provider = new ethers.providers.JsonRpcProvider(this.rpc_url,137);
     this.district = new ethers.Contract("0x83537906b8501C2843bDe7636E7f0dF0d1daB5eD",abis.district,this.provider);
 
