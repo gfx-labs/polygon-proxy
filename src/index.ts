@@ -1,37 +1,98 @@
-import { ethers } from "ethers";
-import * as abis from "./abis";
-
 import Koa from "koa";
 import Router from "koa-router";
 
+import {CLI} from "cliffy";
+import {initializeLandState, LandState} from "./storage/land_container";
+let landState:LandState;
 
 const app = new Koa();
 const router = new Router();
 
 
-const provider = new ethers.providers.JsonRpcProvider("https://polygon-rpc.com",137);
-const district = new ethers.Contract("0x83537906b8501C2843bDe7636E7f0dF0d1daB5eD",abis.district,provider);
-const fromBlock = 18761008;
 
-const grabPlot = async (startBlock:number):Promise<any[]>=>{
-  return district.queryFilter(district.filters.PlotTransfer(),startBlock)
-}
+let cli:CLI = new CLI().setDelimiter("polygon_reader>");
 
-const grabDistrict = async (startBlock:number):Promise<any[]>=>{
-  return district.queryFilter(district.filters.Transfer(),startBlock)
-}
+cli.addCommand("update",async (params, opt)=>{
+  await landState.update().then(console.log)
+});
 
-router.get("/plot/:block", async (ctx,next)=>{
-  const lesser = parseInt(ctx.params.block) > fromBlock ? parseInt(ctx.params.block) : fromBlock;
-  ctx.status = 200;
-  ctx.body = await grabPlot(lesser)
+cli.addCommand("show",(params, opt)=>{
+  landState.show();
+});
+
+cli.addCommand("load", async (params, opt)=>{
+  await landState.load()
+  console.log("loaded")
+});
+
+
+cli.addCommand("save", async (params, opt)=>{
+  await landState.save();
+  console.log("saved")
+});
+
+cli.addCommand("reset", async (params, opt)=>{
+  landState.reset();
+  await landState.save();
+  console.log("reset")
 })
 
-router.get("/district/:block", async (ctx,next)=>{
-  const lesser = parseInt(ctx.params.block) > fromBlock ? parseInt(ctx.params.block) : fromBlock;
-  ctx.status = 200;
-  ctx.body = await grabDistrict(lesser)
+cli.addCommand("setBlock", {
+  parameters:[{label:"blocknumber",type:"number"}],
+  action:async (params, exec)=>{
+    landState.last_block = params.blocknumber;
+    await landState.save();
+  }
 })
 
-app.use(router.routes()).use(router.allowedMethods()).listen(10100);
-console.log("running on port 10100");
+cli.addCommand("district", {
+  parameters:[{label:"id",type:"number"}],
+  action:async (params, exec)=>{
+    landState.show_district(params.id.toString());
+  }
+})
+
+
+cli.addCommand("exit", async (params, opt)=>{
+  await landState.save();
+  process.exit(0);
+});
+
+router.get("/block", (ctx,next) =>{
+  ctx.status = 200
+  ctx.body = landState.last_block;
+});
+
+router.get("/district/:id", (ctx,next) =>{
+  const dist = landState.districts.get(ctx.params.id.toString());
+  const dist_con = landState.district_content.get(ctx.params.id.toString());
+  if(dist !== undefined && dist_con !== undefined){
+  ctx.status = 200
+  ctx.body = {
+    owner:dist,
+    contains:Array.from(dist_con.values()),
+  }
+  }else{
+    ctx.status = 400
+  }
+});
+
+
+let running = 0;
+(async () => {
+  landState = await initializeLandState("../db")
+
+
+  setInterval(async ()=>{
+    if(running == 0){
+      running = 1
+      await landState.update();
+      running = 0
+    }
+  },30*1000)
+
+  app.use(router.routes()).use(router.allowedMethods()).listen(10100);
+  console.log("running on port 10100");
+
+  cli.show();
+})()
