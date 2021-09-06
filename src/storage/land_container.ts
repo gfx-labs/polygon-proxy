@@ -18,9 +18,11 @@ export class LandState {
   activity:Map<number,Set<string>>
 
   districts:Map<string,string>;
+
   plots:Map<string,string>;
 
   plot_location:Map<string,[number, number]>
+  plot_finder:Map<string,string>
 
   district_content:Map<string,Set<string>>;
 
@@ -48,14 +50,13 @@ export class LandState {
     this.last_block = 18792700;
 
     this.plot_location = new Map();
+    this.plot_finder = new Map();
 
     this.district_count = 0;
     this.plot_count = 0;
 
     this.db = new level(this.data_dir)
-
     this.activity = new Map();
-
   }
 
   __init = (datadir:string) => {
@@ -68,6 +69,9 @@ export class LandState {
     this.plots = new Map();
     this.district_content = new Map();
     this.last_block = 18792700;
+
+    this.plot_location = new Map();
+    this.plot_finder = new Map();
 
     this.district_count = 1;
     this.plot_count = 0;
@@ -117,17 +121,21 @@ export class LandState {
       const plot_creates = await this.district.queryFilter(this.district.filters.PlotCreation(),this.last_block,target)
       for(const e of plot_creates){
         if(e.args !== undefined){
-          this.plot_location.set(e.args[2].toString(),[parseInt(e.args[0].toString()), parseInt(e.args[1].toString())])
+          this.set_location(parseInt(e.args[0].toString()), parseInt(e.args[1].toString()), e.args[2].toString())
           count++;
         }
       }
-
       this.plot_count = this.plots.size
       this.last_block = target;
       return count;
     }catch(e){
       throw e;
     }
+  }
+
+  set_location(x:number,z:number,id:number){
+    this.plot_location.set(id.toString(),[x,z])
+    this.plot_finder.set(`${x}_${z}`,id.toString());
   }
 
   mark_update = (block:number, district:string) =>{
@@ -227,7 +235,7 @@ export class LandState {
 
         const loc = await this.db.get(`pl!${i}`).catch(()=>{return undefined})
         if(loc !== undefined){
-          this.plot_location.set(`${i}`,loc)
+          this.set_location(loc[0],loc[1],i)
         }
       }
 

@@ -3,6 +3,7 @@ import Router from "koa-router";
 
 import {CLI} from "cliffy";
 import {initializeLandState, LandState} from "./storage/land_container";
+import {district} from "./abis";
 let landState:LandState;
 
 const app = new Koa();
@@ -105,6 +106,37 @@ router.get("/district/:id", (ctx,next) =>{
     ctx.status = 400
   }
 });
+
+router.get("/plots/:x1/:x2/:z1/:z2", (ctx,next) =>{
+  const x1 = parseInt(ctx.params.x1);
+  const x2 = parseInt(ctx.params.x2);
+  const z1 = parseInt(ctx.params.z1);
+  const z2 = parseInt(ctx.params.z2);
+  const plots = new Set()
+  const districts = new Set()
+  if(x1!== undefined && x2 !== undefined && z1 !== undefined && z2 !== undefined){
+    for(let x_c = x1; x_c <= x2; x_c++){
+      for(let z_c = z1; z_c <= z2; z_c++){
+        const plotId = landState.plot_finder.get(`${x_c}_${z_c}`);
+        if(plotId !== undefined){
+          plots.add(plotId)
+          const districtId = landState.plots.get(plotId);
+          if(districtId !== undefined){
+            districts.add(districtId)
+          }
+        }
+      }
+    }
+    ctx.status = 200
+    ctx.body = {
+      p:Array.from(plots.values()),
+      d:Array.from(districts.values()),
+    }
+  }else{
+    ctx.status = 400
+  }
+});
+
 
 
 let running = 0;
