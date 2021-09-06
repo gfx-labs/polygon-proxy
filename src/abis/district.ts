@@ -1,4 +1,4 @@
-const abi = [
+export default  [
     {
       "anonymous": false,
       "inputs": [
@@ -66,6 +66,31 @@ const abi = [
         }
       ],
       "name": "OwnershipTransferred",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "int128",
+          "name": "x",
+          "type": "int128"
+        },
+        {
+          "indexed": false,
+          "internalType": "int128",
+          "name": "z",
+          "type": "int128"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "plotId",
+          "type": "uint256"
+        }
+      ],
+      "name": "PlotCreation",
       "type": "event"
     },
     {
@@ -735,6 +760,3 @@ const abi = [
       "type": "function"
     }
   ]
-
-
-export default abi;

@@ -10,11 +10,17 @@ dotenv.config({path:".env"})
 
 const ALCHEMY_MAX=1950;
 
+const CONTRACT_ADDR = "0xc7b4cdf2c8ff3fc94d4f9f882d86ce824e0fb985"
+
 export class LandState {
   data_dir:string;
 
+  activity:Map<number,Set<string>>
+
   districts:Map<string,string>;
   plots:Map<string,string>;
+
+  plot_location:Map<string,[number, number]>
 
   district_content:Map<string,Set<string>>;
 
@@ -34,17 +40,21 @@ export class LandState {
     this.data_dir = datadir;
     this.rpc_url = process.env.RPC_URL as string;
     this.provider = new ethers.providers.JsonRpcProvider(this.rpc_url,137);
-    this.district = new ethers.Contract("0x83537906b8501C2843bDe7636E7f0dF0d1daB5eD",abis.district,this.provider);
+    this.district = new ethers.Contract(CONTRACT_ADDR,abis.district,this.provider);
 
     this.districts = new Map([["0","0x0000000000000000000000000000000000000000"]]);
     this.plots = new Map();
     this.district_content = new Map();
-    this.last_block = 18761000;
+    this.last_block = 18792700;
+
+    this.plot_location = new Map();
 
     this.district_count = 0;
     this.plot_count = 0;
 
     this.db = new level(this.data_dir)
+
+    this.activity = new Map();
 
   }
 
@@ -52,17 +62,18 @@ export class LandState {
     this.data_dir = datadir;
     this.rpc_url = process.env.RPC_URL as string;
     this.provider = new ethers.providers.JsonRpcProvider(this.rpc_url,137);
-    this.district = new ethers.Contract("0x83537906b8501C2843bDe7636E7f0dF0d1daB5eD",abis.district,this.provider);
+    this.district = new ethers.Contract(CONTRACT_ADDR,abis.district,this.provider);
 
     this.districts = new Map([["0","0x0000000000000000000000000000000000000000"]]);
     this.plots = new Map();
     this.district_content = new Map();
-    this.last_block = 18761000;
+    this.last_block = 18792700;
 
     this.district_count = 1;
     this.plot_count = 0;
 
     this.db = new level(this.data_dir)
+    this.activity = new Map();
   }
 
 
@@ -103,6 +114,14 @@ export class LandState {
           count++;
         }
       }
+      const plot_creates = await this.district.queryFilter(this.district.filters.PlotCreation(),this.last_block,target)
+      for(const e of plot_creates){
+        if(e.args !== undefined){
+          this.plot_location.set(e.args[2].toString(),[parseInt(e.args[0].toString()), parseInt(e.args[1].toString())])
+          count++;
+        }
+      }
+
       this.plot_count = this.plots.size
       this.last_block = target;
       return count;
@@ -111,10 +130,19 @@ export class LandState {
     }
   }
 
+  mark_update = (block:number, district:string) =>{
+    let log = this.activity.get(block)
+    if(log == undefined){
+      this.activity.set(block,new Set([district]))
+    }else{
+      log.add(district)
+    }
+  }
 
   move_district = async(event:interfaces.DistrictTransfer) =>{
     const bn = parseInt(event.blockNumber.toString())
     if(this.last_block <= bn){
+      this.mark_update(bn,event.district.toString());
       this.districts.set(event.district.toString(), event.target.toString())
       this.last_block = bn;
     }
@@ -122,6 +150,8 @@ export class LandState {
 
   move_plot = async(event:interfaces.PlotTransfer) =>{
     const bn = parseInt(event.blockNumber.toString())
+    this.mark_update(bn,event.origin.toString());
+    this.mark_update(bn,event.target.toString());
     if(this.last_block <= bn){
       const origin = this.init_district(event.origin);
       const target = this.init_district(event.target);
@@ -165,6 +195,10 @@ export class LandState {
     try{
       for(const [plot,district] of this.plots.entries()){
         await this.db.put(`p!`+plot,district);
+        const location = this.plot_location.get(plot.toString());
+        if( location !== undefined){
+          await this.db.put(`pl!`+plot,location)
+        }
       }
       this.db.put("plot_count",this.plots.size);
       for(const [district,owner] of this.districts.entries()){
@@ -176,6 +210,8 @@ export class LandState {
       for(const [district,contents] of this.district_content.entries()){
         await this.db.put(`dc!`+district, Array.from(contents.values()));
       }
+
+      await this.db.put("activity",Array.from(this.activity.entries()).map(([a,b])=>{return [a,Array.from(b.values())]}))
     }catch(e){
       throw e;
     }
@@ -190,6 +226,11 @@ export class LandState {
       for(let i = 0; i < this.plot_count; i++){
         const info = await this.db.get(`p!${i}`).catch(()=>{return "0"})
         this.plots.set(`${i}`,info)
+
+        const loc = await this.db.get(`pl!${i}`).catch(()=>{return undefined})
+        if(loc !== undefined){
+          this.plot_location.set(`${i}`,info)
+        }
       }
 
       this.district_count = await this.db.get("district_count").catch(()=>{return 0})
@@ -200,6 +241,12 @@ export class LandState {
         const content = await this.db.get(`dc!${i}`).catch(()=>{return []})
         this.district_content.set(`${i}`, new Set(content))
       }
+
+      const activity_entries = await this.db.get("activity").catch(()=>{return []})
+      for(const [blockNumber, districts] of activity_entries){
+        this.activity.set(parseInt(blockNumber),new Set(districts));
+      }
+
       return this;
     }catch(e){
       throw e;

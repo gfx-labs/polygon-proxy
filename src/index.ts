@@ -52,10 +52,39 @@ cli.addCommand("district", {
   }
 })
 
+cli.addCommand("activity", ()=>{
+  console.log(landState.activity.entries())
+})
+
 
 cli.addCommand("exit", async (params, opt)=>{
   await landState.save();
   process.exit(0);
+});
+
+router.get("/plot/:plotid", (ctx,next) =>{
+ const location = landState.plot_location.get(ctx.params.plotid)
+ if(location !== undefined){
+  ctx.status = 200
+   ctx.body = {coord:location};
+ }else{
+     ctx.status = 400
+   }
+});
+
+
+router.get("/since/:block", (ctx,next) =>{
+ const block =  parseInt(ctx.params.block)
+ let toUpdate = new Set();
+ for(const [bn,districts] of landState.activity){
+   if(bn > block){
+     for(const d of districts.values()){
+       toUpdate.add(d)
+     }
+   }
+ }
+ ctx.status = 200
+ ctx.body = {block:landState.last_block,update: Array.from(toUpdate.values())}
 });
 
 router.get("/block", (ctx,next) =>{
