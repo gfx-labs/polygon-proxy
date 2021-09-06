@@ -198,11 +198,14 @@ export class LandState {
     const dist_con = this.district_content.get(id);
     if(dist !== undefined &&  dist_con !== undefined){
       const contained = Array.from(dist_con.values())
+      const pairs = contained.map( x=>{return this.plot_location.get(x)}).map((x)=>{
+        if(x!== undefined){
+        return `${x[0]}_${x[1]}`}});
       return {
         owner:dist,
         contains: contained,
         name:`District ${id}`,
-        description: `A District containing ${contained.length} Plots:`,
+        description: `A District containing ${contained.length} Plots: \n ${pairs.join(", ")}`,
         image:`https://i.imgur.com/TZKmzvw.png`,
         external_url:`https://etherlands.io/district/${id}`,
         attributes: [
