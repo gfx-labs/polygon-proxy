@@ -83,7 +83,7 @@ export class LandState {
       const current = await this.provider.getBlockNumber();
       let target = this.last_block + ALCHEMY_MAX;
       target = target > current ? current : target;
-      if(target - this.last_block < 100){
+      if(target - this.last_block < 10){
         return 0;
       }
 
@@ -144,7 +144,6 @@ export class LandState {
     if(this.last_block <= bn){
       this.mark_update(bn,event.district.toString());
       this.districts.set(event.district.toString(), event.target.toString())
-      this.last_block = bn;
     }
   }
 
@@ -158,7 +157,6 @@ export class LandState {
       origin.delete(event.plot.toString());
       target.add(event.plot.toString());
       this.plots.set(event.plot.toString(), event.target.toString())
-      this.last_block = bn;
     }
   }
 
