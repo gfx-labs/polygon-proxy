@@ -229,7 +229,7 @@ export class LandState {
 
         const loc = await this.db.get(`pl!${i}`).catch(()=>{return undefined})
         if(loc !== undefined){
-          this.plot_location.set(`${i}`,info)
+          this.plot_location.set(`${i}`,loc)
         }
       }
 
