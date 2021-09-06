@@ -93,7 +93,7 @@ router.get("/block", (ctx,next) =>{
   ctx.body = landState.last_block;
 });
 
-router.get("/district/:id", (ctx,next) =>{
+router.get("/district_lite/:id", (ctx,next) =>{
   const dist = landState.districts.get(ctx.params.id.toString());
   const dist_con = landState.district_content.get(ctx.params.id.toString());
   if(dist !== undefined && dist_con !== undefined){
@@ -106,6 +106,17 @@ router.get("/district/:id", (ctx,next) =>{
     ctx.status = 400
   }
 });
+
+router.get("/district_lite/:id", (ctx,next) =>{
+  const payload = landState.district_metadata(ctx.params.id.toString())
+  if(payload !== undefined){
+  ctx.status = 200
+  ctx.body = payload
+  }else{
+    ctx.status = 400
+  }
+});
+
 
 router.get("/plots/:x1/:x2/:z1/:z2", (ctx,next) =>{
   const x1 = parseInt(ctx.params.x1);

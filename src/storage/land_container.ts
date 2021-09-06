@@ -193,6 +193,33 @@ export class LandState {
     }
   }
 
+  district_metadata = (id:string) =>{
+    const dist = this.districts.get(id);
+    const dist_con = this.district_content.get(id);
+    if(dist !== undefined &&  dist_con !== undefined){
+      const contained = Array.from(dist_con.values())
+      return {
+        owner:dist,
+        contains: contained,
+        name:`District ${id}`,
+        description: `A District containing ${contained.length} Plots`,
+        image:`https://i.imgur.com/TZKmzvw.png`,
+        external_url:`https://etherlands.io/district/${id}`,
+        attributes: [
+          {
+            "trait_type":"Size",
+            "value":contained.length,
+          },
+          {
+            "trait_type":"Team",
+            "value":"None",
+          },
+        ]
+      }
+    }
+    return undefined;
+  }
+
   reset = () =>{
     this.__init(this.data_dir);
   }
