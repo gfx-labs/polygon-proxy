@@ -202,17 +202,18 @@ export class LandState {
         owner:dist,
         contains: contained,
         name:`District ${id}`,
-        description: `A District containing ${contained.length} Plots`,
+        description: `A District containing ${contained.length} Plots:`,
         image:`https://i.imgur.com/TZKmzvw.png`,
         external_url:`https://etherlands.io/district/${id}`,
         attributes: [
           {
-            "trait_type":"Size",
-            "value":contained.length,
+            display_type:"number",
+            trait_type:"Size",
+            value:contained.length,
           },
           {
-            "trait_type":"Team",
-            "value":"None",
+            trait_type:"Team",
+            value:"None",
           },
         ]
       }
