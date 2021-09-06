@@ -107,7 +107,7 @@ router.get("/district_lite/:id", (ctx,next) =>{
   }
 });
 
-router.get("/district_lite/:id", (ctx,next) =>{
+router.get("/district/:id", (ctx,next) =>{
   const payload = landState.district_metadata(ctx.params.id.toString())
   if(payload !== undefined){
   ctx.status = 200
