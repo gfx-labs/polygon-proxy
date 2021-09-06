@@ -2,6 +2,8 @@ import {ethers} from "ethers";
 import * as abis from "../abis";
 import * as interfaces from "../interfaces";
 
+import {scanaround} from "../utils/cluster";
+
 import level from 'level-ts';
 
 import * as dotenv from "dotenv";
@@ -201,10 +203,15 @@ export class LandState {
       const pairs = contained.map( x=>{return this.plot_location.get(x)}).map((x)=>{
         if(x!== undefined){
         return `${x[0]}_${x[1]}`}});
+      const cluster_map = this.cluster(Array.from(dist_con.values()))
+      const clusters = Array.from(cluster_map.entries()).map((x:any)=>{
+        return [x[0],Array.from(x[1])]
+      })
       return {
         owner:dist,
         contains: contained,
         name:`District ${id}`,
+        clusters:Object.fromEntries(clusters),
         description: `A District containing ${contained.length} Plots: \n ${pairs.join(", ")}`,
         image:`https://i.imgur.com/TZKmzvw.png`,
         external_url:`https://etherlands.io/district/${id}`,
@@ -288,6 +295,47 @@ export class LandState {
     }catch(e){
       throw e;
     }
+  }
+
+  cluster = (plotIds:Array<string>) =>{
+    const plots = plotIds.filter((x)=>{return (this.plots.has(x) && x != '0')})
+    const pairs = plots.map((x)=>{return this.plot_location.get(x)})
+    const total = pairs.length
+    const keyed = new Map();
+    let clustered = new Map();
+    const pairmap = new Map();
+    for(let i = 0; i < total; i++){
+      const entry = pairs[i]
+      if(entry !== undefined){
+        const x = entry[0];
+        const z = entry[1];
+        let kx = keyed.get(x);
+        keyed.set(x,kx == undefined ? new Map() : kx);
+        keyed.get(x).set(z,plots[i])
+      }
+      pairmap.set(plots[i],pairs[i]);
+    }
+
+    let target = 0;
+    let cluster_id = 0;
+    while(target < total){
+      if(clustered.has(plots[target])){
+        target = target + 1
+        continue;
+      }
+      scanaround(plots[target],cluster_id,plots,pairmap,keyed,clustered);
+      cluster_id = cluster_id + 1;
+    }
+
+    const clusters = new Map()
+    for(const [plot, id] of clustered.entries()){
+      if(!clusters.has(id)){
+        clusters.set(id,new Set([plot.toString()]))
+      }else{
+        clusters.get(id).add(plot);
+      }
+    }
+    return clusters
   }
 
 }

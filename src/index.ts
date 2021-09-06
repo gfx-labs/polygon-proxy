@@ -38,6 +38,16 @@ cli.addCommand("reset", async (params, opt)=>{
   console.log("reset")
 })
 
+
+
+cli.addCommand("cluster", {
+  parameters:[{label:"amt",type:"number"}],
+  action:(params, exec)=>{
+    const targets = Array.from(Array(params.amt).keys()).map((x)=>{return x.toString()})
+    landState.cluster(targets);
+  }
+})
+
 cli.addCommand("setBlock", {
   parameters:[{label:"blocknumber",type:"number"}],
   action:async (params, exec)=>{
