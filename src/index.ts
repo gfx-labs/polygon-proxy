@@ -168,7 +168,11 @@ let running = 0;
   setInterval(async ()=>{
     if(running == 0){
       running = 1
+      try{
       await landState.update();
+      }catch(e){
+        console.log(e);
+      }
       running = 0
     }
   },30*1000)
