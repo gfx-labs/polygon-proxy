@@ -73,14 +73,15 @@ cli.addCommand("exit", async (params, opt)=>{
   process.exit(0);
 });
 
-router.get("/plot/:plotid", (ctx,next) =>{
- const location = landState.plot_location.get(ctx.params.plotid)
- if(location !== undefined){
-  ctx.status = 200
-   ctx.body = {coord:location};
- }else{
-     ctx.status = 400
-   }
+router.get("/plot/:plotid", async (ctx,next) => {
+  const location = landState.plot_location.get(ctx.params.plotid)
+  if(location !== undefined){
+    ctx.status = 200
+    ctx.body = {coord:location};
+  }else{
+    landState.force_plot(ctx.params.plotid)
+    ctx.status = 400
+  }
 });
 
 
@@ -164,13 +165,14 @@ let running = 0;
 (async () => {
   landState = await initializeLandState("./db")
 
-
   setInterval(async ()=>{
     if(running == 0){
+      const prefail = landState.last_block
       running = 1
       try{
-      await landState.update();
+        await landState.update();
       }catch(e){
+        landState.last_block = prefail;
         console.log(e);
       }
       running = 0

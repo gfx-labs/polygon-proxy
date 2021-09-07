@@ -83,6 +83,19 @@ export class LandState {
   }
 
 
+  force_plot = async(id:string) =>{
+    try{
+      const x_c = await this.district.plot_x(id)
+      const z_c = await this.district.plot_z(id)
+
+      const loc = [parseInt(x_c.toString()), parseInt(z_c.toString())];
+      this.set_location(loc[0], loc[1], parseInt(id));
+      return loc
+    }catch(e){
+        throw "no plot here";
+    }
+  }
+
   update = async():Promise<number>=>{
     let count = 0;
     try{
