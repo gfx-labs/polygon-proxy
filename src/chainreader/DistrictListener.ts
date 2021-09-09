@@ -49,37 +49,39 @@ export class DistrictListener extends ChainListener{
     }
   }
 
-  parse_TransferEvent = (_:Log, event:ethers.Event) => {
-    if(event.args !== undefined){
-      console.log("received event:", event);
-      const origin = event.args[0].toString()
-      const target = event.args[1].toString();
-      const id = parseInt(event.args[2].toString());
+  parse_TransferEvent = (log:Log ) => {
+    const decoded = this.contract_object.interface.decodeEventLog("Transfer", log.data)
+    if(decoded !== undefined){
+      const origin = decoded[0];
+      const target = decoded[1].toString();
+      const id = parseInt(decoded[2].toString());
         this.emitter.emit("TransferEvent",[id,target]);
     }
-    this.block_number = event.blockNumber;
+    this.block_number = log.blockNumber;
   }
 
-  parse_PlotTransferEvent = (_:Log, event:ethers.Event) => {
-    if(event.args !== undefined){
-      console.log("received event:", event);
-      const origin = parseInt(event.args[0].toString());
-      const target = parseInt(event.args[1].toString());
-      const plot = parseInt(event.args[2].toString());
+  parse_PlotTransferEvent = (log:Log) => {
+    const decoded = this.contract_object.interface.decodeEventLog("PlotTransfer", log.data)
+    if(decoded !== undefined){
+      console.log("received PlotTransfer:", decoded);
+      const origin = parseInt(decoded[0].toString());
+      const target = parseInt(decoded[1].toString());
+      const plot = parseInt(decoded[2].toString());
       this.emitter.emit("PlotTransferEvent",[origin,target,plot]);
     }
-    this.block_number = event.blockNumber;
+    this.block_number = log.blockNumber;
   }
 
-  parse_PlotCreateEvent = (_:Log, event:ethers.Event) => {
-    if(event.args !== undefined){
-      console.log("received event:", event);
-      const x = parseInt(event.args[0].toString());
-      const z = parseInt(event.args[1].toString());
-      const id = parseInt(event.args[2].toString());
+  parse_PlotCreateEvent = (log:Log) => {
+    const decoded = this.contract_object.interface.decodeEventLog("PlotCreation", log.data)
+    if(decoded !== undefined){
+      console.log("received PlotCreation:", decoded);
+      const x = parseInt(decoded[0].toString());
+      const z = parseInt(decoded[1].toString());
+      const id = parseInt(decoded[2].toString());
       this.emitter.emit("PlotCreateEvent",[x,z,id]);
       }
-    this.block_number = event.blockNumber;
+    this.block_number = log.blockNumber;
   }
 
   blockNumber = ():number =>{

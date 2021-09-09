@@ -63,12 +63,15 @@ export class DistrictReader {
   start = () => {
     this.emitter.on("TransferEvent", (a:[number,string])=>{
       this.set_district_owner(...a)
+      console.log(a)
     })
 
     this.emitter.on("PlotTransferEvent", (a:[number,number,number])=>{
+      console.log(a)
       this.set_plot_district(...a)
     })
     this.emitter.on("PlotCreateEvent", (a:[number,number,number])=>{
+      console.log(a)
       this.set_plot_location(...a)
     })
     this.emitter.on("UpdateBlock",(a:number) =>{
