@@ -1,132 +1,41 @@
+import {ethers} from "ethers";
 import Koa from "koa";
 import Router from "koa-router";
-
-import {CLI} from "cliffy";
-import {initializeLandState, LandState} from "./storage/land_container";
-import {district} from "./abis";
-let landState:LandState;
+import * as dotenv from "dotenv";
+dotenv.config({path:".env"});
 
 const app = new Koa();
 const router = new Router();
 
+import {cli} from "./repl"
 
+import {DistrictReader} from "./chainreader/DistrictReader"
+import {level_store} from "./storage/level_store"
+import {Map2} from "./utils/Map2";
 
-let cli:CLI = new CLI().setDelimiter("polygon_reader>");
+const prov = new ethers.providers.JsonRpcProvider(process.env.RPC_URL as string)
+const WS = new ethers.providers.WebSocketProvider(process.env.WS_URL as string)
+const db = new level_store('./db');
+const reader = new DistrictReader(WS,prov,db);
 
-cli.addCommand("update",async (params, opt)=>{
-  await landState.update().then(console.log)
-});
-
-cli.addCommand("show",(params, opt)=>{
-  landState.show();
-});
-
-cli.addCommand("load", async (params, opt)=>{
-  await landState.load()
-  console.log("loaded")
-});
-
-
-cli.addCommand("save", async (params, opt)=>{
-  await landState.save();
-  console.log("saved")
-});
-
-cli.addCommand("reset", async (params, opt)=>{
-  landState.reset();
-  await landState.save();
-  console.log("reset")
-})
-
-
-
-cli.addCommand("cluster", {
-  parameters:[{label:"amt",type:"number"}],
-  action:(params, exec)=>{
-    const targets = Array.from(Array(params.amt).keys()).map((x)=>{return x.toString()})
-    landState.cluster(targets);
-  }
-})
-
-cli.addCommand("setBlock", {
-  parameters:[{label:"blocknumber",type:"number"}],
-  action:async (params, exec)=>{
-    landState.last_block = params.blocknumber;
-    await landState.save();
-  }
-})
-
-cli.addCommand("district", {
-  parameters:[{label:"id",type:"number"}],
-  action:async (params, exec)=>{
-    landState.show_district(params.id.toString());
-  }
-})
-
-cli.addCommand("activity", ()=>{
-  console.log(landState.activity.entries())
-})
-
-
-cli.addCommand("exit", async (params, opt)=>{
-  await landState.save();
-  process.exit(0);
-});
 
 router.get("/plot/:plotid", async (ctx,next) => {
-  const location = landState.plot_location.get(ctx.params.plotid)
+  const location = reader.plot_location.get(parseInt(ctx.params.plotid))
   if(location !== undefined){
     ctx.status = 200
     ctx.body = {coord:location};
   }else{
-    landState.force_plot(ctx.params.plotid)
+    try {
+    await reader.force_get_plot(parseFloat(ctx.params.plotid))
+    ctx.body = {coord:location};
+    ctx.status = 200
+    }catch(e){
     ctx.status = 400
+    ctx.body = e
+    }
   }
 });
 
-
-router.get("/since/:block", (ctx,next) =>{
- const block =  parseInt(ctx.params.block)
- let toUpdate = new Set();
- for(const [bn,districts] of landState.activity){
-   if(bn > block){
-     for(const d of districts.values()){
-       toUpdate.add(d)
-     }
-   }
- }
- ctx.status = 200
- ctx.body = {block:landState.last_block,update: Array.from(toUpdate.values())}
-});
-
-router.get("/block", (ctx,next) =>{
-  ctx.status = 200
-  ctx.body = landState.last_block;
-});
-
-router.get("/district_lite/:id", (ctx,next) =>{
-  const dist = landState.districts.get(ctx.params.id.toString());
-  const dist_con = landState.district_content.get(ctx.params.id.toString());
-  if(dist !== undefined && dist_con !== undefined){
-  ctx.status = 200
-  ctx.body = {
-    owner:dist,
-    contains:Array.from(dist_con.values()),
-  }
-  }else{
-    ctx.status = 400
-  }
-});
-
-router.get("/district/:id", (ctx,next) =>{
-  const payload = landState.district_metadata(ctx.params.id.toString())
-  if(payload !== undefined){
-  ctx.status = 200
-  ctx.body = payload
-  }else{
-    ctx.status = 400
-  }
-});
 
 
 router.get("/plots/:x1/:x2/:z1/:z2", (ctx,next) =>{
@@ -139,10 +48,10 @@ router.get("/plots/:x1/:x2/:z1/:z2", (ctx,next) =>{
   if(x1!== undefined && x2 !== undefined && z1 !== undefined && z2 !== undefined){
     for(let x_c = x1; x_c <= x2; x_c++){
       for(let z_c = z1; z_c <= z2; z_c++){
-        const plotId = landState.plot_finder.get(`${x_c}_${z_c}`);
+        const plotId = reader.plot_location_reverse.getDefault(x_c,z_c,undefined)
         if(plotId !== undefined){
           plots.add(plotId)
-          const districtId = landState.plots.get(plotId);
+          const districtId = reader.plot_district.get(plotId);
           if(districtId !== undefined){
             districts.add(districtId)
           }
@@ -161,26 +70,128 @@ router.get("/plots/:x1/:x2/:z1/:z2", (ctx,next) =>{
 
 
 
+router.get("/since/:block", (ctx,next) =>{
+ const block =  parseInt(ctx.params.block)
+ let toUpdate = new Set();
+ for(const [bn,districts] of reader.activity){
+   if(bn > block){
+     for(const d of districts.values()){
+       toUpdate.add(d)
+     }
+   }
+ }
+ ctx.status = 200
+ ctx.body = {block:reader.searcher.last_update,update: Array.from(toUpdate.values())}
+});
+
+router.get("/block", (ctx,next) =>{
+  ctx.status = 200
+  ctx.body = reader.searcher.last_update
+});
+
+
+cli.addCommand("resync",async (params, opt)=>{
+  await reader.force_resync();
+});
+
+cli.addCommand("cluster", {
+  parameters:[{label:"amt",type:"number"}],
+  action:(params, exec)=>{
+  }
+})
+
+cli.addCommand("plot", {
+  parameters:[{label:"id",type:"number"}],
+  action:async (params, exec)=>{
+    const coords = await reader.get_plot(params.id)
+    const district = await reader.get_plot_district(params.id)
+    cli.log(`district: ${district}    location: ${coords}`)
+  }
+})
+
+
+router.get("/district_lite/:id", (ctx,next) =>{
+  const dist = reader.district_owner.get(parseInt(ctx.params.id))
+  const dist_con = reader.district_plots.get(parseInt(ctx.params.id));
+  if(dist !== undefined && dist_con !== undefined){
+  ctx.status = 200
+  ctx.body = {
+    owner:dist,
+    contains:Array.from(dist_con.values()),
+  }
+  }else{
+    ctx.status = 400
+  }
+});
+
+router.get("/district/:id", (ctx,next) =>{
+  const payload = reader.district_metadata(parseInt(ctx.params.id))
+  if(payload !== undefined){
+    ctx.status = 200
+    ctx.body = payload
+  }else{
+    ctx.status = 400
+  }
+});
+
+cli.addCommand("forcePlot", {
+  parameters:[{label:"id",type:"number"}],
+  action:async (params, exec)=>{
+    const coords = await reader.force_get_plot(params.id)
+    const district = await reader.force_get_plot_district(params.id)
+    cli.log(`district: ${district}    location: ${coords}`)
+  }
+})
+
+
+cli.addCommand("forceDistrict", {
+  parameters:[{label:"id",type:"number"}],
+  action:async (params, exec)=>{
+    const owner = await reader.force_get_district_owner(params.id)
+    cli.log(`district: ${params.id}    owner: ${owner}`)
+  }
+})
+
+cli.addCommand("call", {
+  parameters:[
+    {label:"method",type:"string"},
+    {label:"args",type:"string",rest:true}
+  ],
+  action:async (params, exec)=>{
+    await reader.searcher.call_contract(params.method,cli.log,...params.args).catch((e)=>{console.log(`call failed with: ${e}`)})
+  }
+})
+cli.addCommand("prop", {
+  parameters:[
+    {label:"item",type:"string"},
+  ],
+  action:(params, exec)=>{
+    let cast:any = reader
+    if(cast[params.item]){
+    console.log(cast[params.item])
+    }
+  }
+})
+
+cli.addCommand("district", {
+  parameters:[{label:"id",type:"number"}],
+  action:async (params, exec)=>{
+    const owner = await reader.get_plot_district(params.id);
+    cli.log(`owner: ${owner}`)
+  }
+})
+
+cli.addCommand("exit", async (params, opt)=>{
+  process.exit(0)
+});
+
 let running = 0;
 (async () => {
-  landState = await initializeLandState("./db")
-
-  setInterval(async ()=>{
-    if(running == 0){
-      const prefail = landState.last_block
-      running = 1
-      try{
-        await landState.update();
-      }catch(e){
-        landState.last_block = prefail;
-        console.log(e);
-      }
-      running = 0
-    }
-  },30*1000)
-
+  await reader.load();
   app.use(router.routes()).use(router.allowedMethods()).listen(10100);
-  console.log("running on port 10100");
 
+
+
+  console.log("running on port 10100");
   cli.show();
 })()

@@ -1,10 +1,10 @@
 
 export const scanaround =
-  (plot:string,
+  (plot:number,
    cluster:number,
-   plots:Array<string>, pairs:Map<string,[number,number]>,
-   keyed:Map<number,Map<number, string>>, clustered:Map<string,number>
-  ):Map<string,number> => {
+   plots:Array<number>, pairs:Map<number,[number,number]>,
+   keyed:Map<number,Map<number, number>>, clustered:Map<number,number>
+  ):Map<number,number> => {
     const found = []
     const entry = pairs.get(plot)
 
