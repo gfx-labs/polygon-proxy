@@ -43,6 +43,7 @@ export class level_store implements KVStore {
       return output
     })
   }
+
   async get_string_map(t:string):Promise<Map<number,string>>{
     return this.db.stream({all:t+"!"}).then((res)=>{
       const output:Map<number,string> = new Map();
@@ -52,6 +53,7 @@ export class level_store implements KVStore {
       return output
     })
   }
+
   async get_coord_map(t:string):Promise<Map<number,[number,number]>>{
     return this.db.stream({all:t+"!"}).then((res)=>{
       const output:Map<number,[number,number]> = new Map();

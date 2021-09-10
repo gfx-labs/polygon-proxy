@@ -63,15 +63,15 @@ export class DistrictReader {
   start = () => {
     this.emitter.on("TransferEvent", (a:[number,string])=>{
       this.set_district_owner(...a)
-      console.log(a)
+      console.log("TranferEvent",a)
     })
 
     this.emitter.on("PlotTransferEvent", (a:[number,number,number])=>{
-      console.log(a)
+      console.log("PlotTransferEvent",a)
       this.set_plot_district(...a)
     })
     this.emitter.on("PlotCreateEvent", (a:[number,number,number])=>{
-      console.log(a)
+      console.log("PlotCreateEvent",a)
       this.set_plot_location(...a)
     })
     this.emitter.on("UpdateBlock",(a:number) =>{
@@ -91,7 +91,7 @@ export class DistrictReader {
         let loc = await this.searcher.get_plot_coords(plot_id)
         let dist = await this.searcher.get_plot_district(plot_id)
         this.set_plot_location(loc[0],loc[1],plot_id,true);
-        this.set_plot_district(0,plot_id,dist,true);
+        this.set_plot_district(0,dist,plot_id,true);
       }catch(e){
         console.log(e)
       }
@@ -203,13 +203,13 @@ export class DistrictReader {
     }
   }
 
-  set_plot_district = (origin:number,target:number,district:number,skip_mark_activity?:boolean) => {
-    this.plot_district.set(target,district);
-    this.district_plots.remove(origin,district)
-    this.district_plots.add(target,district);
-    this.db.put("pd", target,district);
+  set_plot_district = (origin:number,target:number,plot:number,skip_mark_activity?:boolean) => {
+    this.plot_district.set(plot,target);
+    this.district_plots.remove(origin,plot);
+    this.district_plots.add(target,plot);
+    this.db.put("pd", target,plot);
     if(skip_mark_activity !== true){
-      this.mark_activity_district(district);
+      this.mark_activity_district(target);
       this.mark_activity_plot(origin);
       this.mark_activity_plot(target);
     }
@@ -220,7 +220,7 @@ export class DistrictReader {
     this.owner_district.set(owner,district);
     this.db.put_string("do", district, owner);
     if(skip_mark_activity !== true){
-    this.mark_activity_district(district);
+      this.mark_activity_district(district);
     }
   }
 
@@ -244,7 +244,7 @@ export class DistrictReader {
     }
     const pd_map = await this.db.get_map('pd');
     for(let [k,v] of pd_map.entries()){
-      this.set_plot_district(0,k,v,true)
+      this.set_plot_district(0,v,k,true)
     }
     this.activity = await this.db.get_activity_map('ac');
 
