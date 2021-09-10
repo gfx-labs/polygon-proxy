@@ -19,7 +19,7 @@ export class DistrictListener extends ChainListener{
     super(provider,abis.district,"0xc7b4cdf2c8ff3fc94d4f9f882d86ce824e0fb985")
     this.block_number = 18792700;
     this.hook()
-    this.emitter = new Emittery();
+    this.emitter = emitter
     this.url = provider.connection.url;
     this.last_alive = 0;
     setInterval(this.checkBlocks,1000*30)
@@ -67,7 +67,6 @@ export class DistrictListener extends ChainListener{
       const origin = parseInt(decoded[0].toString());
       const target = parseInt(decoded[1].toString());
       const plot = parseInt(decoded[2].toString());
-      console.log("received PlotTransfer:", decoded, [origin,target,plot]);
       this.emitter.emit("PlotTransferEvent",[origin,target,plot]);
     }
     this.block_number = log.blockNumber;
@@ -79,7 +78,6 @@ export class DistrictListener extends ChainListener{
       const x = parseInt(decoded[0].toString());
       const z = parseInt(decoded[1].toString());
       const id = parseInt(decoded[2].toString());
-      console.log("received PlotCreation:", decoded, [x,z,id],decoded[0].toString(),decoded[0]);
       this.emitter.emit("PlotCreateEvent",[x,z,id]);
       }
     this.block_number = log.blockNumber;

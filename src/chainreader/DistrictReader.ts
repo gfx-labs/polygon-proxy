@@ -39,7 +39,7 @@ export class DistrictReader {
 
 
   constructor(websocket:ethers.providers.WebSocketProvider, rpc:ethers.providers.JsonRpcProvider, db:KVStore){
-    this.emitter = new Emittery();
+    this.emitter = new Emittery() as (DistrictEmitter);
     this.listener = new DistrictListener(websocket,this.emitter);
     this.searcher = new DistrictSearcher(rpc,this.emitter);
 
@@ -115,7 +115,9 @@ export class DistrictReader {
       const contained = Array.from(dist_con.values())
       const pairs = contained.map( x=>{return this.plot_location.get(x)}).map((x)=>{
         if(x!== undefined){
-        return `${x[0]}_${x[1]}`}});
+          return `${x[0]}_${x[1]}`
+        }
+      });
       const cluster_map = this.cluster(Array.from(dist_con.values()))
       const clusters = Array.from(cluster_map.entries()).map((x:any)=>{
         return [x[0],Array.from(x[1])]
