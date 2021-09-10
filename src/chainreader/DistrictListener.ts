@@ -64,10 +64,10 @@ export class DistrictListener extends ChainListener{
   parse_PlotTransferEvent = (log:Log) => {
     const decoded = this.contract_object.interface.decodeEventLog("PlotTransfer", log.data)
     if(decoded !== undefined){
-      console.log("received PlotTransfer:", decoded);
       const origin = parseInt(decoded[0].toString());
       const target = parseInt(decoded[1].toString());
       const plot = parseInt(decoded[2].toString());
+      console.log("received PlotTransfer:", decoded, [origin,target,plot]);
       this.emitter.emit("PlotTransferEvent",[origin,target,plot]);
     }
     this.block_number = log.blockNumber;
@@ -76,10 +76,10 @@ export class DistrictListener extends ChainListener{
   parse_PlotCreateEvent = (log:Log) => {
     const decoded = this.contract_object.interface.decodeEventLog("PlotCreation", log.data)
     if(decoded !== undefined){
-      console.log("received PlotCreation:", decoded);
       const x = parseInt(decoded[0].toString());
       const z = parseInt(decoded[1].toString());
       const id = parseInt(decoded[2].toString());
+      console.log("received PlotCreation:", decoded, [x,z,id],decoded[0].toString(),decoded[0]);
       this.emitter.emit("PlotCreateEvent",[x,z,id]);
       }
     this.block_number = log.blockNumber;
