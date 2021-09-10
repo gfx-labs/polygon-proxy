@@ -207,7 +207,7 @@ export class DistrictReader {
     this.plot_district.set(plot,target);
     this.district_plots.remove(origin,plot);
     this.district_plots.add(target,plot);
-    this.db.put("pd", target,plot);
+    this.db.put("pd", plot,target);
     if(skip_mark_activity !== true){
       this.mark_activity_district(target);
       this.mark_activity_plot(origin);

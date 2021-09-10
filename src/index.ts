@@ -160,6 +160,7 @@ cli.addCommand("call", {
     await reader.searcher.call_contract(params.method,cli.log,...params.args).catch((e)=>{console.log(`call failed with: ${e}`)})
   }
 })
+
 cli.addCommand("prop", {
   parameters:[
     {label:"item",type:"string"},
@@ -188,8 +189,6 @@ let running = 0;
 (async () => {
   await reader.load();
   app.use(router.routes()).use(router.allowedMethods()).listen(10100);
-
-
 
   console.log("running on port 10100");
   cli.show();
