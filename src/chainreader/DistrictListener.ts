@@ -29,6 +29,9 @@ export class DistrictListener extends ChainListener{
     this.provider.on(this.contract_object.filters.Transfer(),this.parse_TransferEvent)
     this.provider.on(this.contract_object.filters.PlotCreation(),this.parse_PlotCreateEvent)
     this.provider.on(this.contract_object.filters.PlotTransfer(),this.parse_PlotTransferEvent)
+    this.provider.on("block",(bn)=>{
+      this.emitter.emit("UpdateBlock",parseInt(bn.toString()))
+    })
   }
 
   recover = () => {

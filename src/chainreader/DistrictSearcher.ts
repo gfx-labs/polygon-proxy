@@ -12,12 +12,10 @@ const ALCHEMY_MAX=1950;
 export class DistrictSearcher extends ChainSearcher{
 
   emitter:DistrictEmitter;
-  last_update:number;
 
   constructor(provider:ethers.providers.JsonRpcProvider, emitter:DistrictEmitter){
     super(provider,abis.district,"0xc7b4cdf2c8ff3fc94d4f9f882d86ce824e0fb985")
     this.emitter = emitter;
-    this.last_update = 18792700;
   };
 
   get_plot_coords = async (id:number):Promise<[number,number]> => {

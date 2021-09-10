@@ -80,12 +80,12 @@ router.get("/since/:block", (ctx,next) =>{
    }
  }
  ctx.status = 200
- ctx.body = {block:reader.searcher.last_update,update: Array.from(toUpdate.values())}
+ ctx.body = {block:reader.last_update,update: Array.from(toUpdate.values())}
 });
 
 router.get("/block", (ctx,next) =>{
   ctx.status = 200
-  ctx.body = reader.searcher.last_update
+  ctx.body = reader.last_update
 });
 
 

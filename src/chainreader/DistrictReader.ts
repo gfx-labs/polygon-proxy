@@ -36,6 +36,7 @@ export class DistrictReader {
   db:KVStore;
 
   emitter:DistrictEmitter;
+  last_update:number;
 
 
   constructor(websocket:ethers.providers.WebSocketProvider, rpc:ethers.providers.JsonRpcProvider, db:KVStore){
@@ -45,6 +46,7 @@ export class DistrictReader {
 
     this.db = db;
 
+    this.last_update = 18792700;
     this.plot_location = new Map();
     this.plot_location_reverse = new Map2();
 
@@ -75,6 +77,7 @@ export class DistrictReader {
       this.set_plot_location(...a)
     })
     this.emitter.on("UpdateBlock",(a:number) =>{
+      this.last_update = a;
       this.db.put("u",0,a);
     })
   }
@@ -252,7 +255,7 @@ export class DistrictReader {
     this.activity = await this.db.get_activity_map('ac');
 
     await this.db.get("u",0).then((update_block)=>{
-      this.searcher.last_update = update_block
+      this.last_update = update_block
     }).catch(()=>{})
   }
 
