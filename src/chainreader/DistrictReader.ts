@@ -228,6 +228,7 @@ export class DistrictReader {
 
   mark_activity_district = (district:number) =>{
     this.activity.add(this.listener.blockNumber(),district)
+    this.db.add_activity("ac",this.listener.blockNumber(),district)
   }
   mark_activity_plot = (plot:number) =>{
     if(!this.plot_location.has(plot)){
