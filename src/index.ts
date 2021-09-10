@@ -18,7 +18,6 @@ const WS = new ethers.providers.WebSocketProvider(process.env.WS_URL as string)
 const db = new level_store('./db');
 const reader = new DistrictReader(WS,prov,db);
 
-
 router.get("/plot/:plotid", async (ctx,next) => {
   const location = reader.plot_location.get(parseInt(ctx.params.plotid))
   if(location !== undefined){
@@ -76,7 +75,6 @@ router.get("/since/:block", (ctx,next) =>{
  for(const [bn,districts] of reader.activity){
    if(bn > block){
      for(const d of districts.values()){
-       console.log(bn,d)
        toUpdate.add(d)
      }
    }

@@ -52,6 +52,7 @@ export class DistrictListener extends ChainListener{
   parse_TransferEvent = (log:Log ) => {
     const decoded = this.contract_object.interface.decodeEventLog("Transfer", log.data)
     if(decoded !== undefined){
+      console.log("received transfer:", decoded);
       const origin = decoded[0];
       const target = decoded[1].toString();
       const id = parseInt(decoded[2].toString());
