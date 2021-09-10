@@ -176,7 +176,7 @@ cli.addCommand("prop", {
 cli.addCommand("district", {
   parameters:[{label:"id",type:"number"}],
   action:async (params, exec)=>{
-    const owner = await reader.get_plot_district(params.id);
+    const owner = await reader.get_district_owner(parseInt(params.id))
     cli.log(`owner: ${owner}`)
   }
 })
