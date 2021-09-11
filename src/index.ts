@@ -76,7 +76,7 @@ router.get("/since/:block", (ctx,next) =>{
    if(bn > block){
      for(const d of districts.values()){
        if(d != null){
-       toUpdate.add(d)
+         toUpdate.add(parseInt(d.toString()))
        }
      }
    }
