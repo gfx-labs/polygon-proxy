@@ -6,6 +6,7 @@ import {Map2} from "../utils/Map2"
 import {SetMap} from "../utils/SetMap"
 import type {DistrictEmitter} from "./DistrictReader"
 import Emittery from "emittery"
+import {Indexed} from "ethers/lib/utils"
 
 export class DistrictListener extends ChainListener{
 
@@ -53,12 +54,12 @@ export class DistrictListener extends ChainListener{
   }
 
   parse_TransferEvent = (log:Log ) => {
-    const decoded = this.contract_object.interface.decodeEventLog("Transfer", log.data)
+    let decoded = log.topics;
     if(decoded !== undefined){
-      console.log("received transfer:", decoded);
-      const origin = decoded[0];
-      const target = decoded[1].toString();
-      const id = parseInt(decoded[2].toString());
+      console.log("received transfer:", log);
+      const origin = decoded[1];
+      const target = ethers.utils.getAddress(decoded[2].replace("0x000000000000000000000000","0x"))
+      const id = parseInt(decoded[3].toString());
         this.emitter.emit("TransferEvent",[id,target]);
     }
     this.block_number = log.blockNumber;
