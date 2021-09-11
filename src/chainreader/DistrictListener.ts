@@ -56,7 +56,6 @@ export class DistrictListener extends ChainListener{
   parse_TransferEvent = (log:Log ) => {
     let decoded = log.topics;
     if(decoded !== undefined){
-      console.log("received transfer:", log);
       const origin = decoded[1];
       const target = ethers.utils.getAddress(decoded[2].replace("0x000000000000000000000000","0x"))
       const id = parseInt(decoded[3].toString());
