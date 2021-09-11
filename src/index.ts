@@ -22,10 +22,12 @@ router.get("/plot/:plotid", async (ctx,next) => {
   const location = reader.plot_location.get(parseInt(ctx.params.plotid))
   if(location !== undefined){
     ctx.status = 200
+    ctx.type = 'json'
     ctx.body = {coord:location};
   }else{
     try {
     await reader.force_get_plot(parseFloat(ctx.params.plotid))
+    ctx.type = 'json'
     ctx.body = {coord:location};
     ctx.status = 200
     }catch(e){
@@ -58,6 +60,7 @@ router.get("/plots/:x1/:x2/:z1/:z2", (ctx,next) =>{
       }
     }
     ctx.status = 200
+    ctx.type = 'json'
     ctx.body = {
       p:Array.from(plots.values()),
       d:Array.from(districts.values()),
@@ -82,6 +85,7 @@ router.get("/since/:block", (ctx,next) =>{
    }
  }
  ctx.status = 200
+ ctx.type = 'json'
  ctx.body = {block:reader.last_update,update: Array.from(toUpdate.values())}
 });
 
@@ -116,6 +120,7 @@ router.get("/district_lite/:id", (ctx,next) =>{
   const dist_con = reader.district_plots.get(parseInt(ctx.params.id));
   if(dist !== undefined && dist_con !== undefined){
   ctx.status = 200
+  ctx.type = 'json'
   ctx.body = {
     owner:dist,
     contains:Array.from(dist_con.values()),
@@ -129,6 +134,7 @@ router.get("/district/:id", (ctx,next) =>{
   const payload = reader.district_metadata(parseInt(ctx.params.id))
   if(payload !== undefined){
     ctx.status = 200
+    ctx.type = 'json'
     ctx.body = payload
   }else{
     ctx.status = 400
